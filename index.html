@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Anonymous Chat</title>
+  <style>
+    body { font-family: Arial; background: #111; color: #fff; }
+    #chat { height: 400px; overflow-y: scroll; border: 1px solid #444; padding: 10px; }
+    #msg { width: 80%; padding: 10px; }
+    #send { padding: 10px; }
+    #groupLink { margin-top: 10px; color: #0f0; }
+  </style>
+</head>
+<body>
+
+<h2>🔥 Anonymous Chat</h2>
+<p id="groupName"></p>
+
+<div id="chat"></div>
+
+<input type="text" id="msg" placeholder="Message...">
+<button id="send">Send</button>
+
+<br><br>
+<button onclick="createGroup()">Create Hidden Group</button>
+<p id="groupLink"></p>
+
+<script type="module">
+  // Your Firebase Config (replace this part with your real Firebase config)
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+  import { getDatabase, ref, push, onChildAdded } 
+    from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "YOUR_KEY",
+    authDomain: "YOUR_DOMAIN",
+    databaseURL: "YOUR_DB_URL",
+    projectId: "YOUR_ID",
+    storageBucket: "YOUR_BUCKET",
+    messagingSenderId: "ID",
+    appId: "ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // Generate anonymous username
+  const username = "User_" + Math.floor(Math.random() * 9999);
+
+  // Detect group from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  let group = urlParams.get("group") || "public";
+
+  document.getElementById("groupName").innerText = 
+    "Group: " + group;
+
+  const chatRef = ref(db, "groups/" + group);
+
+  // Send message
+  document.getElementById("send").onclick = function () {
+    let text = document.getElementById("msg").value;
+    if (!text.trim()) return;
+    push(chatRef, { user: username, msg: text });
+    document.getElementById("msg").value = "";
+  };
+
+  // Load new messages in real-time
+  onChildAdded(chatRef, snapshot => {
+    let data = snapshot.val();
+    let msg = document.createElement("p");
+    msg.innerHTML = `<b>${data.user}:</b> ${data.msg}`;
+    document.getElementById("chat").appendChild(msg);
+    document.getElementById("chat").scrollTop = 999999;
+  });
+
+  // Create new hidden group
+  function createGroup() {
+    let id = Math.random().toString(36).substring(2, 10);
+    let link = window.location.origin + window.location.pathname + "?group=" + id;
+    document.getElementById("groupLink").innerText = "Hidden Group Link: " + link;
+  }
+</script>
+
+</body>
+</html>
